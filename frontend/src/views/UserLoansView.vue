@@ -1,0 +1,359 @@
+<template>
+  <div class="loans">
+    <h1>Your Loans</h1>
+
+    <!-- Display a list of loans -->
+    <div class="table-container">
+      <table v-if="loans.length > 0">
+        <thead>
+          <tr>
+            <th>Book Title</th>
+            <th>Loan Date</th>
+            <th>Date Returned</th>
+            <th>Return</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="loan in loans" :key="loan.id">
+            <td>{{ loan.title }}</td>
+            <td>{{ formatDate(loan.loan_date) }}</td>
+            <td>{{ formatDate(loan.date_returned) || 'Not Returned Yet' }}</td>
+            <td>
+              <button 
+              :class="{'returned': loan.date_returned}"
+              v-if="!loan.date_returned"
+                @click="askConfirmation(loan)"
+              >
+                Return Book
+              </button>
+              <!-- Display 'Returned' button with gray styling if the book is returned -->
+              <button
+                v-else
+                class="returned"
+                disabled
+              >
+                Returned
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else>No loans found.</p>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div v-if="showConfirmation" class="confirmation-overlay">
+      <div class="confirmation-modal">
+        <p>Are you sure you want to return this book?</p>
+        <div class="buttons">
+        <button @click="returnBook()">Yes</button>
+        <button @click="cancelReturn">No</button>
+      </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="pagination">
+      <button 
+        @click="changePage(currentPage - 1)" 
+        :disabled="currentPage === 1"
+      >
+        Previous
+      </button>
+      <span class="pagination-text">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button 
+        @click="changePage(currentPage + 1)" 
+        :disabled="currentPage === totalPages"
+      >
+        Next
+      </button>
+      
+    </div>
+  </div>
+</template>
+
+<script>
+import Toastify from 'toastify-js';  // Import Toastify
+
+import "toastify-js/src/toastify.css";
+import axios from 'axios';
+
+export default {
+  data() {
+    return {
+      loans: [],
+      userId: localStorage.getItem('userId'),
+      currentPage: 1,
+      totalPages: 1,
+      loansPerPage: 5,
+      showConfirmation: false, // Flag to show confirmation modal
+      loanToReturn: null, // To store the loan for which the user is confirming the return
+    };
+  },
+  methods: {
+    getLoans() {
+      axios
+        .get(`http://127.0.0.1:5000/loans/user/${this.userId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          params: {
+            page: this.currentPage,
+            limit: this.loansPerPage,
+          },
+        })
+        .then((response) => {
+          this.loans = response.data.loans.sort((a, b) => {
+            if (!a.date_returned && b.date_returned) return -1;
+            if (a.date_returned && !b.date_returned) return 1;
+            return new Date(b.loan_date) - new Date(a.loan_date);
+          });
+          this.totalPages = response.data.totalPages;
+        })
+        .catch((error) => {
+          console.error('Error fetching loans:', error);
+        });
+    },
+
+    formatDate(date) {
+      return date ? new Date(date).toLocaleDateString() : '';
+    },
+
+    askConfirmation(loan) {
+      this.showConfirmation = true;
+      this.loanToReturn = loan;
+    },
+
+    returnBook() {
+      axios
+        .put(
+          `http://127.0.0.1:5000/loans/return/${this.loanToReturn.id}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        )
+        .then((response) => {
+          const updatedLoan = response.data;
+          const loanIndex = this.loans.findIndex((l) => l.id === updatedLoan.id);
+          if (loanIndex !== -1) {
+            this.loans[loanIndex] = updatedLoan;
+          }
+          this.loans.sort((a, b) => {
+            if (!a.date_returned && b.date_returned) return -1;
+            if (a.date_returned && !b.date_returned) return 1;
+            return new Date(b.loan_date) - new Date(a.loan_date);
+          });
+
+        
+        Toastify({
+          text: "Book returned successfully!",
+          duration: 3000, // 3 seconds
+          backgroundColor: "#4CAF50", // Green color for success
+          close: true,
+          position: "center",
+        }).showToast();
+          this.cancelReturn(); // Close the confirmation modal after success
+        })
+        .catch((error) => {
+          console.error('Error returning book:', error);
+          Toastify({
+          text: this.errorMessage,
+          duration: 3000, // Toast duration in ms
+          close: true,
+          gravity: "top", // Position of the toast (top/bottom)
+          position: "center", // Position on screen (left, center, right)
+          backgroundColor: "#ff4d4d", // Red background for errors
+          stopOnFocus: true, // Stop animation when the toast is focused
+        }).showToast();
+          this.cancelReturn(); // Close the confirmation modal after error
+        });
+    },
+
+    cancelReturn() {
+      this.showConfirmation = false;
+      this.loanToReturn = null;
+    },
+
+    changePage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      this.getLoans();
+    },
+  },
+  mounted() {
+    this.getLoans();
+  },
+};
+</script>
+
+<style scoped>
+/* Add styles for the confirmation modal and blur effect */
+.loans {
+  background: url("/images/loans-background.jpg") no-repeat center/cover;
+  max-width: 100%;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 2rem;
+
+}
+.pagination-text{
+  color: white;
+  font-weight: bold;
+  
+}
+h1{
+  text-align: center;
+  background-color: rgba(167, 199, 231, 0.7);
+  padding: 2rem;
+  font-size: 2rem;
+  font-weight: bold;
+}
+.confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px); /* Blur the background */
+}
+
+.confirmation-modal {
+  background-color: white;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirmation-modal p {
+  margin-bottom: 20px;
+}
+
+.confirmation-modal button {
+  padding: 10px 20px;
+  margin: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.confirmation-modal button:hover {
+  background-color: #218838;
+}
+/* Style the returned button */
+td button.returned {
+  background-color: #6c757d; /* Gray color */
+  color: white;
+  cursor: not-allowed;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+}
+
+
+button {
+  padding: 5px 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+}
+
+.pagination span {
+  margin: 0 20px;
+}
+
+.table-container {
+  overflow-x: auto;
+  background-color:rgba(167, 199, 231, 0.7); /* Light blue with transparency */
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 5px 10px; /* Add gap between rows */
+}
+
+th, td {
+  padding: 12px 0px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+th {
+  background-color: #007bff; /* Same as home header color */
+  color: white;
+  font-weight: bold;
+}
+
+td {
+  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+  color: #333;
+}
+
+td button {
+  padding: 6px 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+td button:hover {
+  background-color: #218838;
+}
+
+td button:disabled {
+  background-color: #ccc; /* Gray when the book is returned */
+  cursor: not-allowed;
+}
+
+td button.returned {
+  background-color: #6c757d; /* Gray when returned */
+  cursor: not-allowed;
+}
+</style>
