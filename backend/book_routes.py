@@ -14,7 +14,7 @@ def allowed_file(filename):
 
 @book_routes.route('/add', methods=['POST'])
 def add_book():
-    data = request.form  # Use 'request.form' instead of 'request.get_json()' to handle file uploads
+    data = request.form  
     print(f"Received data: {data}")
 
     # Check and convert 'available' to boolean if it's a string, otherwise leave it as is
@@ -41,7 +41,7 @@ def add_book():
         # Save the image file
         image_file.save(image_path)
         
-        # Ensure the image path uses forward slashes, which are preferred in URLs
+       
         image_url = f"images/{filename}" 
     # Create new book
     new_book = Book(
@@ -75,19 +75,17 @@ def update_book_availability(book_id):
 
 
 # Get all books
-# Get all books
 @book_routes.route('/', methods=['GET'])
 def get_books():
     books = Book.query.all()
 
-    # Return a list of books, including quantity
     return jsonify([{
         'id': book.id,
         'title': book.title,
         'author': book.author,
         'available': book.available,
         'quantity': book.quantity,
-        'image_url': book.image_url  # Include quantity in the response
+        'image_url': book.image_url  
     } for book in books]), 200
 
 # Get a specific book by ID
@@ -102,12 +100,11 @@ def get_book(id):
             'author': book.author,
             'available': book.available,
             'quantity': book.quantity,
-            'image_url': book.image_url   # Include quantity in the response
+            'image_url': book.image_url   
         }), 200
     else:
         return jsonify({'message': 'Book not found'}), 404
 
-# Update a book's details
 # Update a book's details
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
@@ -120,11 +117,11 @@ def update_book(id):
     if not book:
         return jsonify({'message': 'Book not found'}), 404
 
-    # Handle form data (non-file data)
+    
     title = request.form.get('title')
     author = request.form.get('author')
     quantity = request.form.get('quantity')
-    image = request.files.get('image')  # For the image upload
+    image = request.files.get('image')  
 
     # Update book details if provided
     if title:

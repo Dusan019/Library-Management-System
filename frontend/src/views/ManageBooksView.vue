@@ -7,9 +7,7 @@
       color="blue" 
       @click="showAddModal = true" 
     />
-    <!-- Button to open the modal for adding a new book -->
     
-    <!-- Book Table -->
     <table>
       <thead>
         <tr>
@@ -17,7 +15,7 @@
           <th>Author</th>
           <th>Availability</th>
           <th>Quantity</th>
-          <th>Book Image</th> <!-- Display Quantity -->
+          <th>Book Image</th> 
           <th>Actions</th>
         </tr>
       </thead>
@@ -33,7 +31,7 @@
         <div class="book-image" @click="openImageModal(book.image_url)">
               <img :src="book.image_url" alt="Book Image" />
             </div>
-      </td> <!-- Show Quantity -->
+      </td> 
           <td>
             <button class="edit-btn" @click="editBook(book.id)">✏️</button>
             <button class="delete-btn" @click="deleteBook(book.id)">🗑️</button>
@@ -99,35 +97,51 @@
     </form>
   </div>
 </div>
+<div v-if="showDeleteModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+        <h3>Are you sure you want to delete this book?</h3>
+      </div>
+       <div class="modal-footer">
+        <button @click="confirmDeleteBook" class="yes-btn">Yes,Delete</button>
+        <button @click="closeDeleteModal" class="no-btn">Cancel</button>
+      </div>
+      </div>
+  </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import Button from '@/components/Button.vue';
+import Toastify from 'toastify-js';
+import 'toastify-js/src/toastify.css'; 
+
 export default {
   data() {
     return {
       books: [],
-      showImageModal: false, // Control visibility of the image modal
-      modalImage: '',   // Store list of books
-      showEditModal: false, // Control visibility of the edit modal
-      showAddModal: false, // Control visibility of the add book modal
+      showImageModal: false, 
+      modalImage: '',   
+      showEditModal: false, 
+      showAddModal: false,
+      showDeleteModal: false, 
+      bookToDelete: null,  
       editForm: {
         id: null,
         title: '',
         author: '',
         available: true,
-        quantity: 1, // Ensure quantity field is initialized
+        quantity: 1, 
       },
       newBook: {
         title: '',
         author: '',
         available: true,
         quantity: 1,
-        image: null, // Ensure quantity field is initialized
+        image: null, 
       },
-      currentPage: 1, // Current page number
+      currentPage: 1, 
     booksPerPage: 3,
     };
   },
@@ -145,11 +159,19 @@ export default {
     this.fetchBooks(); // Fetch books when the page loads
   },
   methods: {
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+      this.bookToDelete = null; // Reset the book to delete
+    },
+    deleteBook(bookId) {
+      this.bookToDelete = bookId; // Set the book to delete
+      this.showDeleteModal = true; // Show the confirmation modal
+    },
+
     openImageModal(imageUrl) {
       this.modalImage = imageUrl; // Set the image URL to be shown in the modal
       this.showImageModal = true; // Show the modal
     },
-    // Close the modal
     closeImageModal() {
       this.showImageModal = false; // Hide the modal
     },  
@@ -167,9 +189,20 @@ export default {
         this.books = response.data;
         this.resetPage();
       } catch (error) {
-        console.error('Error fetching books:', error);
+        this.showToast("error",error);
       }
     },
+    showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  // Green for success, red for error
+      }).showToast();
+    },  
+
 
     // Add a new book
     async addBook() {
@@ -184,7 +217,6 @@ export default {
       formData.append('image', this.newBook.image);
     }
 
-    // Send the FormData object
     const response = await axios.post('http://127.0.0.1:5000/books/add', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -192,12 +224,13 @@ export default {
     });
 
     if (response.data.message === 'Book added successfully') {
+      this.showToast("success",response.data.message);
       this.fetchBooks(); // Reload books after successful addition
       this.newBook = { title: '', author: '', available: true, quantity: 1, image: null }; // Clear form
       this.closeAddModal(); // Close the add modal
     }
   } catch (error) {
-    console.error('Error adding book:', error);
+    this.showToast("error",error);
   }
 },
 
@@ -240,6 +273,7 @@ export default {
       });
 
       if (response.data.message === 'Book updated successfully') {
+        this.showToast("success","Book updated successfully!");
         this.fetchBooks(); // Reload books after successful update
         this.closeEditModal(); // Close the modal
       }
@@ -249,11 +283,13 @@ export default {
   },
 
     // Delete a book
-    async deleteBook(bookId) {
+    async confirmDeleteBook() {
       try {
-        const response = await axios.delete(`http://127.0.0.1:5000/books/${bookId}`);
+        const response = await axios.delete(`http://127.0.0.1:5000/books/${this.bookToDelete}`);
         if (response.data.message === 'Book deleted successfully') {
+          this.showToast("success","Book deleted successfully!");
           this.fetchBooks(); // Reload books after successful deletion
+          this.closeDeleteModal();
         }
       } catch (error) {
         console.error('Error deleting book:', error);
@@ -281,21 +317,59 @@ export default {
 </script>
 
 <style scoped>
+
 #quantity-cell{
   font-size: 1.9rem;
 }
+.modal-header{
+  text-align: center;
+}
+.modal-footer .yes-btn {
+  background-color: #28a745; 
+}
+
+.modal-footer .yes-btn:hover {
+  background-color: #218838; 
+}
+
+.modal-footer .no-btn {
+  background-color: #dc3545; 
+}
+
+.modal-footer .no-btn:hover {
+  background-color: #c82333; 
+}
+
+.modal-footer button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+}
 .book-image img {
-  width: 50px; /* Small thumbnail size */
+  margin-top:5px;
+  width: 50px; 
   height: 70px;
   cursor: pointer;
   transition: transform 0.3s ease;
 }
 
 .book-image:hover img {
-  transform: scale(1.1); /* Slight zoom on hover */
+  transform: scale(1.1); 
+}
+.modal-footer {
+  display: flex;
+  justify-content: space-evenly; 
+  gap: 10px; 
 }
 
-/* Modal background */
+.modal-footer button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+  background: #573b8a;
+}
+
+
 .image-modal {
   height: 100%;
   width: 100%;
@@ -304,36 +378,35 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+  background: rgba(0, 0, 0, 0.7); 
   display: flex;
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(10px); /* Blur the background behind the image */
-  z-index: 1000; /* Ensure modal is on top */
+  backdrop-filter: blur(10px); 
+  z-index: 1000; 
 }
 
-/* Modal content for the image */
 .image-modal-content {
   position: relative;
-  background-color: transparent; /* Remove background color */
+  background-color: transparent; 
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 70%; /* Limit the width of the image */
-  max-height: 70%; /* Limit the height of the image */
+  max-width: 70%; 
+  max-height: 70%; 
   padding: 0;
-  border-radius: 10px; /* Optionally add rounded corners */
-  box-shadow: none; /* Remove any shadow */
+  border-radius: 10px; 
+  box-shadow: none; 
 }
 
 /* Image styling */
 .image-modal-content img {
-  width: 100%; /* Image width will be 100% of the modal content container */
-  height: auto; /* Maintain aspect ratio */
-  max-width: 400px; /* Limit the maximum size of the image */
-  max-height: 400px; /* Limit the maximum height of the image */
-  object-fit: contain; /* Maintain aspect ratio */
-  border-radius: 5px; /* Optional rounded corners */
+  width: 100%; 
+  height: auto; 
+  max-width: 400px; 
+  max-height: 400px; 
+  object-fit: contain; 
+  border-radius: 5px; 
 }
 
 /* Close button */
@@ -392,8 +465,9 @@ table {
   border-collapse: separate;
   border-spacing: 10px 10px;
   text-align: center;
-  background-color:rgba(167, 199, 231, 0.7);
-  border-radius: 10px; /* Add gap between rows */
+  background-color: rgba(87, 59, 138, 0.8);
+  border-radius: 10px; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 
 }
 
@@ -407,7 +481,7 @@ th, td {
 }
 
 th {
-  background-color: #28a745;
+  background-color: #007bff;
   color: white;
   font-weight: bold;
   text-transform: uppercase;

@@ -46,8 +46,8 @@
       <div class="confirmation-modal">
         <p>Are you sure you want to return this book?</p>
         <div class="buttons">
-        <button @click="returnBook()">Yes</button>
-        <button @click="cancelReturn">No</button>
+        <button class="yes-btn" @click="returnBook()"><b>Yes,Return</b></button>
+        <button class="no-btn" @click="cancelReturn"><b>Cancel</b></button>
       </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
 </template>
 
 <script>
-import Toastify from 'toastify-js';  // Import Toastify
+import Toastify from 'toastify-js';  
 
 import "toastify-js/src/toastify.css";
 import axios from 'axios';
@@ -86,8 +86,8 @@ export default {
       currentPage: 1,
       totalPages: 1,
       loansPerPage: 5,
-      showConfirmation: false, // Flag to show confirmation modal
-      loanToReturn: null, // To store the loan for which the user is confirming the return
+      showConfirmation: false, 
+      loanToReturn: null, 
     };
   },
   methods: {
@@ -150,25 +150,25 @@ export default {
         
         Toastify({
           text: "Book returned successfully!",
-          duration: 3000, // 3 seconds
-          backgroundColor: "#4CAF50", // Green color for success
+          duration: 3000, 
+          backgroundColor: "#4CAF50", 
           close: true,
           position: "center",
         }).showToast();
-          this.cancelReturn(); // Close the confirmation modal after success
+          this.cancelReturn(); 
         })
         .catch((error) => {
           console.error('Error returning book:', error);
           Toastify({
           text: this.errorMessage,
-          duration: 3000, // Toast duration in ms
+          duration: 3000, 
           close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
+          gravity: "top", 
+          position: "center", 
+          backgroundColor: "#ff4d4d", 
+          stopOnFocus: true, 
         }).showToast();
-          this.cancelReturn(); // Close the confirmation modal after error
+          this.cancelReturn(); 
         });
     },
 
@@ -190,7 +190,7 @@ export default {
 </script>
 
 <style scoped>
-/* Add styles for the confirmation modal and blur effect */
+
 .loans {
   background: url("/images/loans-background.jpg") no-repeat center/cover;
   max-width: 100%;
@@ -208,10 +208,13 @@ export default {
 }
 h1{
   text-align: center;
-  background-color: rgba(167, 199, 231, 0.7);
+  background-color: rgba(87, 59, 138, 0.8);
   padding: 2rem;
   font-size: 2rem;
+  color:white;
   font-weight: bold;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 .confirmation-overlay {
   position: fixed;
@@ -219,12 +222,12 @@ h1{
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  background-color: rgba(0, 0, 0, 0.5); 
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(5px); /* Blur the background */
+  backdrop-filter: blur(5px); 
 }
 
 .confirmation-modal {
@@ -247,18 +250,29 @@ h1{
 .confirmation-modal button {
   padding: 10px 20px;
   margin: 10px;
-  background-color: #28a745;
-  color: white;
   border: none;
   cursor: pointer;
+  border-radius: 5px;
+  color: white;
 }
 
-.confirmation-modal button:hover {
-  background-color: #218838;
+.confirmation-modal .yes-btn {
+  background-color: #28a745; 
 }
-/* Style the returned button */
+
+.confirmation-modal .yes-btn:hover {
+  background-color: #218838; 
+}
+
+.confirmation-modal .no-btn {
+  background-color: #dc3545; 
+}
+
+.confirmation-modal .no-btn:hover {
+  background-color: #c82333; 
+}
 td button.returned {
-  background-color: #6c757d; /* Gray color */
+  background-color: #6c757d; 
   color: white;
   cursor: not-allowed;
   padding: 6px 12px;
@@ -302,15 +316,16 @@ button:hover {
 
 .table-container {
   overflow-x: auto;
-  background-color:rgba(167, 199, 231, 0.7); /* Light blue with transparency */
+  background-color: rgba(87, 59, 138, 0.8); 
   padding: 1rem;
   border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 5px 10px; /* Add gap between rows */
+  border-spacing: 5px 10px; 
 }
 
 th, td {
@@ -323,13 +338,13 @@ th, td {
 }
 
 th {
-  background-color: #007bff; /* Same as home header color */
+  background-color: #007bff; 
   color: white;
   font-weight: bold;
 }
 
 td {
-  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+  background-color: rgba(255, 255, 255, 0.8); 
   color: #333;
 }
 
@@ -348,12 +363,12 @@ td button:hover {
 }
 
 td button:disabled {
-  background-color: #ccc; /* Gray when the book is returned */
+  background-color: #ccc; 
   cursor: not-allowed;
 }
 
 td button.returned {
-  background-color: #6c757d; /* Gray when returned */
+  background-color: #6c757d; 
   cursor: not-allowed;
 }
 </style>

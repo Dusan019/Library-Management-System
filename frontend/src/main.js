@@ -4,18 +4,18 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import Toast from 'vue-toastification';
 import router from './router';
-import axios from 'axios'; // Import Axios directly
+import axios from 'axios'; 
 import { startPeriodicTokenCheck,isTokenExpired } from '@/utils/authUtils';
 
 const app = createApp(App);
 
-// Periodic token check
+
 startPeriodicTokenCheck(() => {
   router.push({ name: 'login' }); // Redirect to login if token expires
 });
 
 // Axios global configuration
-axios.defaults.baseURL = 'http://127.0.0.1:5000'; // Set your backend's base URL
+axios.defaults.baseURL = 'http://127.0.0.1:5000'; 
 
 // Request interceptor to attach Authorization header
 axios.interceptors.request.use(

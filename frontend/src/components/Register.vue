@@ -34,7 +34,7 @@
 <script>
 import axios from 'axios';
 import Toastify from 'toastify-js';
-import 'toastify-js/src/toastify.css'; // Import CSS for Toastify
+import 'toastify-js/src/toastify.css';
 
 export default {
   data() {
@@ -44,10 +44,20 @@ export default {
       email: '',
       name: '',
       last_name: '',
-      errorMessage: '', // To store any error messages from the backend
+      errorMessage: '', 
     };
   },
   methods: {
+    showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  // Green for success, red for error
+      }).showToast();
+    },  
     async register() {
       this.errorMessage = ''; // Clear previous errors before sending a new request
 
@@ -61,31 +71,12 @@ export default {
           last_name: this.last_name,
           role: 'member', // Set default role as 'member'
         });
-        Toastify({
-          text: response.data.message,
-          duration: 3000, // 3 seconds
-          backgroundColor: "#4CAF50", // Green color for success
-          close: true,
-          position: "center",
-        }).showToast();
+        this.showToast('success', response.data.message);
 
-
-        // Handle success (show message or redirect)
-         // You can display a success message here
         this.$router.push('/login'); // Redirect to login page after successful registration
       } catch (error) {
         const errorMessage = error.response && error.response.data ? error.response.data.message : 'An unexpected error occurred. Please try again.';
-       
-        // Handle error (e.g., username already taken or server error)
-        Toastify({
-          text: errorMessage,
-          duration: 3000, // 3 seconds
-          backgroundColor: "#f44336", // Red color for error
-          close: true,
-          position: "center",
-        }).showToast();
-
-        // Optionally, you can set this error message to show in the component as well
+        this.showToast('error', errorMessage);
         this.errorMessage = errorMessage;
       }
     },
@@ -107,8 +98,8 @@ export default {
 
 .main {
   width: 350px;
-  height: auto; /* Let the height adjust based on content */
-  background: rgba(255, 255, 255, 0.9); /* Slight transparency */
+  height: auto; 
+  background: rgba(255, 255, 255, 0.9); 
   border-radius: 10px;
   box-shadow: 5px 20px 50px #000;
   display: flex;
@@ -122,14 +113,14 @@ export default {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center content horizontally */
+  align-items: center; 
 }
 
 form {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center; /* Center content inside the form */
+  align-items: center; 
   width: 100%;
 }
 

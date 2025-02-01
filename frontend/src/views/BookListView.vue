@@ -10,7 +10,7 @@
           <p>{{ book.author }}</p>
           <p>Quantity: {{ book.quantity }}</p>
           <p v-if="book.available && book.quantity > 0">
-            <button @click="borrowBook(book.id)" class="borrow-btn">
+            <button @click="openConfirmationModal(book.id)" class="borrow-btn">
               Borrow
             </button>
           </p>
@@ -20,18 +20,29 @@
     </div>
 
     <p v-if="books.length === 0">No books available</p>
+
+
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <h3>Are you sure you want to borrow this book?</h3>
+        <button @click="confirmBorrow" class="confirm-btn">Yes, Borrow</button>
+        <button @click="closeModal" class="cancel-btn">Cancel</button>
+      </div>
+    </div>
   </div>
 </template>
 
 
 <script>
 import axios from 'axios';
-
+import Toastify from 'toastify-js';
 export default {
   data() {
     return {
       books: [],  // Array to hold the books fetched from the backend
-      userId: null,  // Logged-in user's ID
+      userId: null,
+      showModal: false,  // State to control the modal visibility
+      bookToBorrow: null,  
     };
   },
   created() {
@@ -47,29 +58,35 @@ export default {
         console.error('Error fetching books:', error);
       }
     },
-    async borrowBook(bookId) {
+    openConfirmationModal(bookId) {
+      this.bookToBorrow = bookId;  // Set the book to borrow
+      this.showModal = true;  // Show the modal
+    },
+    closeModal() {
+      this.showModal = false;  // Hide the modal
+      this.bookToBorrow = null;  // Reset book to borrow
+    },
+    async confirmBorrow() {
       try {
-        const returnDate = this.calculateReturnDate();  // You can adjust this logic for return date (e.g., 14 days from now)
+        const returnDate = this.calculateReturnDate();  // Calculate the return date
         const response = await axios.post('http://127.0.0.1:5000/loans/borrow', {
           user_id: this.userId,
-          book_id: bookId,
+          book_id: this.bookToBorrow,
           return_date: returnDate,
         });
-        
-        console.log(response);  // Check the full response object
 
-        // Check if the response indicates success or failure
         if (response.data.success) {
-          alert(response.data.message);  // Show success message
-          this.fetchBooks();  // Refresh the book list to reflect the availability
+          this.showToast('success', response.data.message);  // Show success message
+          this.fetchBooks();  // Refresh the book list
         } else {
-          // If success is not true, show the error message
-          alert(response.data.message);  // Display message sent from the backend
+          this.showToast('error', response.data.message);   // Display failure message
         }
+
+        this.closeModal();  // Close the modal after confirming
       } catch (error) {
-        // If any error occurs during the request or response handling
         console.error('Error borrowing book:', error);
-        alert('Failed to borrow book. Please try again.');
+        this.showToast('error', 'Failed to borrow book. Please try again.');
+        this.closeModal();  // Close the modal after error
       }
     },
     calculateReturnDate() {
@@ -78,26 +95,82 @@ export default {
       today.setDate(today.getDate() + 14);  // Set return date to 14 days later
       return today.toISOString().split('T')[0];  // Return the date in YYYY-MM-DD format
     },
+    showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  // Green for success, red for error
+      }).showToast();
+    },  //
   },
 };
 </script>
 
 <style scoped>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;  /* Ensure modal is on top */
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.confirm-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: #45a049;
+}
+
+.cancel-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #e53935;
+}
 .browse-books {
-  width: 100%;  /* Make the container take up the full width */
+  width: 100%;  
   padding: 0px; 
   overflow-x: auto;
-  background-image: url('images/booklist-background.jpg'); /* Set the background image */
-  background-size: cover; /* Make the image cover the entire area */
-  background-position: center;   /* Ensure container does not overflow */
-/* Add some padding to the container */
+  background-image: url('images/booklist-background.jpg'); 
+  background-size: cover; 
+  background-position: center;   
 }
 .book-list {
 
   padding: 50px;
   display: flex;
-  flex-wrap: wrap;  /* Allow books to wrap to the next line */
-  justify-content: space-between;  /* Center books in the row */
+  flex-wrap: wrap;  
+  justify-content: space-between;  
   gap: 6px;
   max-width: 100%;
   }
@@ -113,15 +186,16 @@ export default {
   border: 1px solid #ddd;
   padding: 10px;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Shadow effect */
+  color:white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
+  background-color: rgba(87, 59, 138, 1); 
 }
 
 .book-image {
-  width: 100%;          /* Ensure image takes the full width of the container */
-  height: 22rem;        /* Set a fixed height for all images */
-  object-fit: cover;    /* Ensure the image covers the area without distortion */
-  border-radius: 8px;   /* Keep the rounded corners */
+  width: 100%;          
+  height: 22rem;        
+  object-fit: cover;    
+  border-radius: 8px;   
 }
 
 .book-info {
@@ -157,9 +231,11 @@ p {
 }
 h2{
   text-align: center;
-  background-color: rgba(167, 199, 231, 0.7);
+  background-color: rgba(87, 59, 138, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   padding: 2rem;
   font-size: 2rem;
   font-weight: bold;
+  color:white;
 }
 </style>

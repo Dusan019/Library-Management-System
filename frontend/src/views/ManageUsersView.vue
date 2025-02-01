@@ -26,7 +26,7 @@
           <td>{{ member.role }}</td>
           <td>
             <button @click="editMember(member)">✏️</button>
-            <button @click="deleteMember(member.id)">🗑️</button>
+            <button @click="showDeleteConfirmation(member)">🗑️</button>
           </td>
         </tr>
       </tbody>
@@ -35,6 +35,15 @@
   <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
   <span>Page {{ currentPage }}</span>
   <button @click="nextPage" :disabled="currentPage * membersPerPage >= members.length">Next</button>
+  <div v-if="showDeleteModal" class="modal">
+      <div class="modal-content">
+        <h3>Are you sure you want to delete this member?</h3>
+        <div class="modal-footer">
+        <button @click="deleteMember(selectedMember.id)" class="yes-btn">Yes,Delete</button>
+        <button @click="closeDeleteModal" class="no-btn">Cancel</button>
+      </div>
+      </div>
+    </div>
 </div>
 
     <!-- Modal for adding new member -->
@@ -107,22 +116,27 @@
 <script>
 import axios from 'axios';
 import Button from '@/components/Button.vue';
+import Toastify from 'toastify-js';
+import 'toastify-js/src/toastify.css'; 
+
 export default {
   components: {
     Button, // Register the Button component
   },
   data() {
     return {
-      members: [], // Store list of members
-      showAddModal: false, // Control visibility of add modal
-      showEditModal: false, // Control visibility of edit modal
+      members: [], 
+      showAddModal: false, 
+      showEditModal: false,
+      showDeleteModal: false, 
+      selectedMember: null, 
       newMember: {
         username: '',
         email: '',
         name: '',
         last_name: '',
         role: 'member',
-        password: '', // Add the password field here
+        password: '', 
       },
       editForm: {
         id: null,
@@ -134,7 +148,7 @@ export default {
       },
       successMessage: '',
       currentPage: 1, // Current page number
-    membersPerPage: 5,  // Add success message variable
+    membersPerPage: 5,  
     };
     
   },
@@ -150,13 +164,20 @@ export default {
     this.fetchMembers(); // Fetch members when the page loads
   },
   methods: {
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+    },
+    showDeleteConfirmation(member) {
+      this.selectedMember = member;
+      this.showDeleteModal = true;
+    },
     // Fetch all members from the backend (GET /users)
     async fetchMembers() {
       try {
         const response = await axios.get('http://127.0.0.1:5000/users');
         this.members = response.data;
         this.resetPage();
-        console.log('Fetched members:', this.members); // Debug log
+        console.log('Fetched members:', this.members); 
       } catch (error) {
         console.error('Error fetching members:', error);
       }
@@ -165,7 +186,7 @@ export default {
 
     // Open the edit modal and populate the form with the member's details
     editMember(member) {
-      console.log('Editing member:', member); // Debug log
+      console.log('Editing member:', member); 
       this.editForm = { ...member }; // Copy the member's details into the form
       this.showEditModal = true; // Show the edit modal
     },
@@ -200,12 +221,13 @@ export default {
     async addMember() {
       try {
         const response = await axios.post('http://127.0.0.1:5000/users/add', this.newMember);
-        console.log('Add member response:', response); // Debug log
+        console.log('Add member response:', response); 
         
         // If the member was added successfully
         if (response.data.message === 'User added successfully') {
           this.members.push(response.data.user); // Add the new member to the list
-          this.successMessage = 'Member added successfully!';  // Set success message
+          this.showToast("success",'Member added successfully!');
+    
           this.closeAddModal(); // Close the modal
           
           // Reset the form after adding the new member
@@ -227,44 +249,60 @@ export default {
         console.error('Error adding member:', error);
       }
     },
-
-    // Update the member information (PUT /users/:id/update)
+    showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  
+      }).showToast();
+    },  
     async updateMember() {
       try {
-        console.log('Updating member:', this.editForm); // Debug log
+        console.log('Updating member:', this.editForm); 
         const response = await axios.put(`http://127.0.0.1:5000/users/${this.editForm.id}/update`, this.editForm);
-        console.log('Update member response:', response); // Debug log
+        console.log('Update member response:', response); 
         if (response.data.message === 'User updated successfully') {
-          this.fetchMembers(); // Reload members after successful update
-          this.closeEditModal(); // Close the modal
+          this.fetchMembers(); 
+          this.closeEditModal(); 
         }
       } catch (error) {
         console.error('Error updating member:', error);
       }
     },
-
-    // Delete a member (DELETE /users/:id/delete)
     async deleteMember(memberId) {
   try {
     const response = await axios.delete(`http://127.0.0.1:5000/users/${memberId}/delete`);
-    console.log('Delete member response:', response.data); // Debug log
-
+    console.log('Delete member response:', response.data);
     if (response.data.message === 'User and related loans deleted successfully') {
-      // Reload the members list after successful deletion
+      
+      this.showToast("success","User and related loans deleted succesfully");
+  
       await this.fetchMembers();
     } else {
-      // If deletion is not allowed, handle it appropriately
-      alert(response.data.message || 'User cannot be deleted.');
-      
+
+      if(response.data.message){
+        this.showToast("success",response.data.message);
+      }
+      else
+      {
+        this.showToast("error","User not cannot be deleted!");
+     
+      }
       // Manually reload members or reset the state
       await this.fetchMembers(); // Ensures the members list is always refreshed after any deletion attempt
     }
+    this.closeDeleteModal();
   } catch (error) {
     console.error('Error deleting member:', error);
-    alert('An error occurred while deleting the user.');
+    this.showToast("error","An error occurred while deleting the user.");
+
 
     // Manually reload members on error
-    await this.fetchMembers(); // Ensure the members list is updated even on error
+    await this.fetchMembers();
+    this.closeDeleteModal(); 
   }
 }
 
@@ -274,7 +312,38 @@ export default {
 </script>
 
 <style scoped>
-/* Styles go here */
+
+.modal-footer{
+  display: flex;
+  justify-content: space-evenly; 
+  gap: 10px;
+}
+.modal-footer button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+}
+.modal-footer .yes-btn {
+  background-color: #28a745; 
+}
+
+.modal-footer .yes-btn:hover {
+  background-color: #218838; 
+}
+
+.modal-footer .no-btn {
+  background-color: #dc3545; 
+}
+
+.modal-footer .no-btn:hover {
+  background-color: #c82333; 
+}
+
+.modal-footer button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+}
 .manage-members {
   margin: 0px;
   max-width: 100%;
@@ -305,7 +374,7 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #007bff;;
 }
 
 button:focus {
@@ -317,9 +386,9 @@ table {
   border-collapse: separate;
   border-spacing: 10px 10px;
   text-align: center;
-  background-color:rgba(167, 199, 231, 0.7);
-  border-radius: 10px; /* Add gap between rows */
-
+  background-color: rgba(87, 59, 138, 0.8);
+  border-radius: 10px; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -332,7 +401,7 @@ border-bottom: 1px solid #ddd;
 }
 
 th {
-background-color: #28a745;
+background-color:  #007bff;;
 color: white;
 font-weight: bold;
 text-transform: uppercase;

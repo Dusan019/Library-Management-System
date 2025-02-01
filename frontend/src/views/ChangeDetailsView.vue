@@ -4,7 +4,7 @@
     <!-- Flex container for both forms -->
     <div class="form-container">
       <!-- Form to update user information -->
-      <form @submit.prevent="updateUserInfo" class="form-left">
+      <form @submit.prevent="openUpdateConfirmation" class="form-left">
         <div class="center">
         <div>
           <label for="username">Username:</label>
@@ -26,12 +26,12 @@
           <input type="text" v-model="last_name" id="last_name" required placeholder="Last Name"/>
         </div>
 
-        <button type="submit">Update Info</button>
+        <button type="submit">Update Information</button>
       </div>
       </form>
 
       <!-- Form to change password -->
-      <form @submit.prevent="changePassword" class="form-right">
+      <form @submit.prevent="openPasswordChangeConfirmation" class="form-right">
         <div class="center">
         <div>
           <label for="current_password">Current Password:</label>
@@ -52,6 +52,30 @@
         </div>
       </form>
     </div>
+    <!-- Confirmation Modals -->
+    <!-- Update Info Modal -->
+    <div v-if="showUpdateModal" class="modal">
+      <div class="modal-content">
+        <h3>Are you sure you want to change your information?</h3>
+        <div class="modal-footer">
+          <button @click="updateUserInfo" class="yes-btn">Yes,Change</button>
+          <button @click="closeUpdateModal" class="no-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation modal for password change -->
+    <div v-if="showPasswordModal" class="modal">
+      <div class="modal-content">
+        <h3>Are you sure you want to change your password?</h3>
+        
+        <div class="modal-footer">
+          <button @click="changePassword" class="yes-btn">Yes,Change</button>
+          <button @click="closePasswordModal" class="no-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
 
     <p v-if="message">{{ message }}</p>
   </div>
@@ -60,7 +84,7 @@
 <script>
 import axios from 'axios';
 import Toastify from 'toastify-js';
-import 'toastify-js/src/toastify.css'; // Import CSS for Toastify
+import 'toastify-js/src/toastify.css'; 
 
 export default {
   data() {
@@ -74,6 +98,8 @@ export default {
       currentPassword: '',
       message: '',
       userId: localStorage.getItem('userId'), 
+      showUpdateModal: false, // for showing the update confirmation modal
+      showPasswordModal: false,
     };
   },
   methods: {
@@ -92,29 +118,38 @@ export default {
         })
         .catch((error) => {
           console.error('Error fetching user data:', error);
-          Toastify({
-          text: "Error fetching the user data!",
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+          this.showToast("error","Error fetching user data!");
         });
+    },
+    showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  // Green for success, red for error
+      }).showToast();
+    },  
+    openUpdateConfirmation() {
+      this.showUpdateModal = true; // Show the confirmation modal
+    },
+
+    closeUpdateModal() {
+      this.showUpdateModal = false; // Close the confirmation modal
+    },
+
+    openPasswordChangeConfirmation() {
+      this.showPasswordModal = true; // Show the confirmation modal
+    },
+
+    closePasswordModal() {
+      this.showPasswordModal = false; // Close the confirmation modal
     },
 
     updateUserInfo() {
       if (this.newPassword && this.newPassword !== this.confirmPassword) {
-        Toastify({
-          text: this.message,
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+        this.showToast("error","Passwords do not match!");
         return;
       }
 
@@ -132,53 +167,22 @@ export default {
           },
         })
         .then((response) => {
-          Toastify({
-          text: response.data.message,
-          duration: 3000, // 3 seconds
-          backgroundColor: "#4CAF50", // Green color for success
-          close: true,
-          position: "center",
-        }).showToast();
+          this.showToast("success",response.data.message);
+        this.closeUpdateModal();
         })
         .catch((error) => {
-          Toastify({
-          text: this.message,
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+          this.showToast("error","Error updating user information!");
         });
     },
 
     changePassword() {
       if (this.newPassword !== this.confirmPassword) {
-        this.message = 'Passwords do not match!';
-        Toastify({
-          text: this.errorMessage,
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+        this.showToast("error",'Passwords do not match!');
         return;
       }
 
       if (!this.currentPassword) {
-        this.message = 'Current password is required!';
-        Toastify({
-          text: this.errorMessage,
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+        this.showToast("error",'Current password is required!');
         return;
       }
 
@@ -194,24 +198,11 @@ export default {
           },
         })
         .then((response) => {
-          Toastify({
-          text: response.data.message,
-          duration: 3000, // 3 seconds
-          backgroundColor: "#4CAF50", // Green color for success
-          close: true,
-          position: "center",
-        }).showToast();
+          this.showToast("success",response.data.message);
+        this.closePasswordModal();
         })
         .catch((error) => {
-          Toastify({
-          text: this.errorMessage,
-          duration: 3000, // Toast duration in ms
-          close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
-        }).showToast();
+          this.showToast("error","Error changing password!");
         });
     },
   },
@@ -222,6 +213,53 @@ export default {
 </script>
 
 <style scoped>
+.modal-footer {
+  display: flex;
+  justify-content: space-evenly; 
+  gap: 10px; 
+}
+.modal-footer .yes-btn {
+  background-color: #28a745; 
+}
+
+.modal-footer .yes-btn:hover {
+  background-color: #218838; }
+
+.modal-footer .no-btn {
+  background-color: #dc3545; 
+}
+
+.modal-footer .no-btn:hover {
+  background-color: #c82333; 
+}
+
+.modal-footer button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.modal-content button {
+  margin: 10px;
+}
 .update-user {
   padding: 20px;
   max-height: 80vh;
@@ -245,7 +283,7 @@ h1{
 
 form {
   width: 30%;
-  background: rgba(255, 255, 255, 0.9); /* Add slight transparency to make the form stand out */
+  background: rgba(255, 255, 255, 0.9); 
   border-radius: 10px;
   box-shadow: 5px 20px 50px #000;
   margin-right: 1rem;
@@ -271,7 +309,7 @@ label {
 }
 
 input {
-  width: 81%; /* Decrease width of inputs */
+  width: 81%; 
   height: 35px;
   font-size: 16px;
   background: #e0dede;

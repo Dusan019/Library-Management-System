@@ -34,7 +34,7 @@
       <!-- Search Results Section -->
       <div v-if="searchedBooks.length > 0" class="search-results">
         <div v-for="book in searchedBooks" :key="book.id" class="book-card">
-          <img :src="book.image_url" alt="Book Image" class="book-image" />
+          <img :src="book.image_url" alt="Book Image" class="book-image"  />
           <div class="book-info">
             <h3>{{ book.title }}</h3>
             <p class="availability" :class="{ available: book.available, notAvailable: !book.available }">
@@ -159,31 +159,31 @@ export default {
 </script>
 
 <style scoped>
-/* Body Styling with Background Image */
 .home-view {
-  height: 100vh; /* Full viewport height */
-  width: 100%; /* Full width */
+  height: 100vh; 
+  width: 100%; 
   padding: 0;
   background: url('images/home-background.jpg') no-repeat center center fixed;
   background-size: cover;
   font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* Ensures header and search bar are at the top */
+  overflow: auto;
+  justify-content: flex-start; 
 }
 
-/* Header Styling */
+
 header {
-  background-color: rgba(167, 199, 231, 0.7); /* Transparent black background */
-  color: #333333;
+  background-color: rgba(87, 59, 138, 0.9); 
+  color: white;
   padding: 20px 0;
   margin-bottom: 30px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Adding shadow for depth */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
 }
 
 nav {
   display: flex;
-  justify-content: space-between; /* Keeps the greeting and logout button on the right side */
+  justify-content: space-between; 
   align-items: center;
   width: 100%;
   padding-right: 10px;
@@ -193,25 +193,31 @@ nav ul {
   display: flex;
   list-style-type: none;
   padding: 0;
-  justify-content: center; /* Centers the menu links */
-  flex-grow: 1; /* Allows menu to expand and center */
+  justify-content: center; 
+  flex-grow: 1; 
 }
 
 nav ul li {
-  margin-right: 30px;
+  margin-right: 10px;
+  display: inline-block;
+  text-align: center;
 }
 
 nav ul li a {
-  color: #333333;
+  color: white;
   text-decoration: none;
   font-size: 0.9em;
-  text-transform: uppercase; /* Make the text uppercase */
+  text-transform: uppercase; 
   letter-spacing: 1px;
-  transition: color 0.3s;
+  transition: transform 0.3s; 
+  display: block; 
+  padding: 10px; 
 }
 
 nav ul li a:hover {
-  color: #4CAF50;
+  transform: scale(1.1);
+  background-color: rgba(87, 59, 138, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
 }
 
 .user-greeting {
@@ -240,8 +246,6 @@ nav ul li a:hover {
   background-color: #d32f2f;
 }
 
-/* Search Bar Section */
-/* Search Bar Section */
 .search-section {
   text-align: center;
   padding: 20px;
@@ -265,13 +269,13 @@ nav ul li a:hover {
   display: block;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow around search bar */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
   transition: box-shadow 0.3s ease-in-out;
 }
 
 .search-bar:focus {
   border-color: #4CAF50;
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+  box-shadow: 0 0 25px rgba(87, 59, 138, 0.9);
 }
 .search-results-table {
   width: 90%;
@@ -281,7 +285,7 @@ nav ul li a:hover {
 .search-results-table table {
   width: 100%;
   border-collapse: collapse;
-  background-color: rgba(167, 199, 231, 0.9);
+  background-color: rgba(87, 59, 138, 0.9);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -291,8 +295,8 @@ nav ul li a:hover {
 .search-results-table td {
   padding: 15px;
   font-size: 18px;
-  text-align: center; /* Center-align text horizontally */
-  vertical-align: middle; /* Center-align text vertically */
+  text-align: center; 
+  vertical-align: middle; 
   border-bottom: 1px solid #f0f0f0;
   font-weight: bold;
 }
@@ -316,9 +320,10 @@ nav ul li a:hover {
   color: red;
 }
 .book-image {
-  width: 100%;
-  height: 250px; /* Adjust depending on image aspect ratio */
-  object-fit: cover; /* Ensures image fits the card without distortion */
+  width: 100%;          
+  height: 20rem;        
+  object-fit: cover;    
+  border-radius: 8px;  
 }
 
 .book-info h3 {
@@ -347,8 +352,11 @@ nav ul li a:hover {
 }
 
 .book-card {
-  background-color: rgba(167, 199, 231, 0.8);
+  background-color: rgba(87, 59, 138, 0.9);
+  border-style: solid;
+  border-width: 1px;
   border-radius: 10px;
+  color:white;
   width: 250px;
   margin: 15px;
   padding: 20px;
@@ -363,21 +371,21 @@ nav ul li a:hover {
 }
 .no-results {
   max-width: 700px;
-  margin: 30px auto; /* Centers the box horizontally */
+  margin: 30px auto; 
   padding: 20px;
   border: 1px solid #f0f0f0;
-  border-radius: 10px; /* Soft edges */
-  background-color: #f9f9f9; /* Light background color */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  text-align: center; /* Center-align the text */
+  border-radius: 10px; 
+  background-color: #f9f9f9; 
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+  text-align: center; 
   font-size: 1.2em;
-  color: #555; /* Neutral text color */
+  color: #555; 
   line-height: 1.5;
 }
 
 .no-results p {
   margin: 0;
-  font-weight: bold; /* Makes the message stand out */
+  font-weight: bold; 
 }
 
 </style>

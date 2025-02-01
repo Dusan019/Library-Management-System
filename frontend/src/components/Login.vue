@@ -35,51 +35,50 @@
 
 <script>
 import axios from 'axios';
-import Toastify from 'toastify-js';  // Import Toastify
-
-import "toastify-js/src/toastify.css";  // Import Toastify styles
+import Toastify from 'toastify-js';  
+import "toastify-js/src/toastify.css";  
 
 export default {
   data() {
     return {
       username: '',
       password: '',
-      errorMessage: '', // To store any error messages from the backend
+      errorMessage: '', 
     };
   },
   methods: {
     async login() {
-      this.errorMessage = ''; // Clear previous errors before sending a new request
+      this.errorMessage = ''; 
 
       try {
-        // Send login credentials to the backend
+       
         const response = await axios.post('http://127.0.0.1:5000/auth/login', {
           username: this.username,
           password: this.password,
         });
 
-        // Handle success (store token in localStorage or redirect)
+        
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('username', response.data.username);
         localStorage.setItem('userId',response.data.user_id);
-        console.log(response.data.token); // Store JWT token
-        this.$router.push('/home'); // Redirect to the dashboard or protected route
+        console.log(response.data.token); 
+        this.$router.push('/home'); 
       } catch (error) {
-        // Handle error (invalid credentials or server error)
+        
         if (error.response && error.response.data) {
           this.errorMessage = error.response.data.message;
         } else {
           this.errorMessage = 'An unexpected error occurred. Please try again.';
         }
-          // Show error message using Toastify
+          
           Toastify({
           text: this.errorMessage,
-          duration: 3000, // Toast duration in ms
+          duration: 3000,
           close: true,
-          gravity: "top", // Position of the toast (top/bottom)
-          position: "center", // Position on screen (left, center, right)
-          backgroundColor: "#ff4d4d", // Red background for errors
-          stopOnFocus: true, // Stop animation when the toast is focused
+          gravity: "top", 
+          position: "center", 
+          backgroundColor: "#ff4d4d", 
+          stopOnFocus: true, 
         }).showToast();
       }
     },
@@ -97,14 +96,13 @@ export default {
   min-height: 100vh;
   font-family: "Jost", sans-serif;
   background: url('/images/login-background.jpg') no-repeat center/cover;
-   /* Use this if the image is stored in src/assets/images */
-  /* If stored in public/images, use: background: url('/images/login-background.jpg') no-repeat center/cover; */
+   
 }
 
 .main {
   width: 350px;
   height: 500px;
-  background: rgba(255, 255, 255, 0.9); /* Add slight transparency to make the form stand out */
+  background: rgba(255, 255, 255, 0.9); 
   border-radius: 10px;
   box-shadow: 5px 20px 50px #000;
   display: flex;
@@ -137,7 +135,7 @@ label {
 }
 
 input {
-  width: 70%; /* Increase width */
+  width: 70%; 
   height: 35px;
   font-size: 16px; 
   background: #e0dede;

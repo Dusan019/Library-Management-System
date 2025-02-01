@@ -8,7 +8,7 @@ import ChangeDetailsView from '../views/ChangeDetailsView.vue';
 import ManageBooksView from '../views/ManageBooksView.vue';
 import ManageUsersView from '../views/ManageUsersView.vue';
 import LoanHistoryView from '../views/LoanHistoryView.vue';
-import { parseJwt } from '../utils/authUtils.js'; // Reuse parsing logic if stored elsewhere
+import { parseJwt } from '../utils/authUtils.js'; 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,8 +60,8 @@ const router = createRouter({
     },
   ],
 });
-
 router.beforeEach((to, from, next) => {
+  document.title = to.meta.title || 'Online library';
   const token = localStorage.getItem('token');
   // Redirect to login if there's no token and the route requires authentication
   if (to.meta.requiresAuth && !token) {

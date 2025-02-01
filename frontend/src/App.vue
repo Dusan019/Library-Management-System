@@ -9,7 +9,7 @@ import { RouterLink, RouterView } from 'vue-router';
 </template>
 
 <style>
-/* Ensure the entire page takes up the full height and width of the viewport */
+
 html, body {
   margin: 0;
   padding: 0;
@@ -28,7 +28,7 @@ html, body {
   align-items: center;
   padding: 0;
   box-sizing: border-box;
-  overflow: hidden; /* Prevent horizontal scroll */
+  overflow: hidden; 
 }
 
 main{

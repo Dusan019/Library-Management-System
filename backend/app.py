@@ -13,8 +13,6 @@ from loan_routes import loan_routes
 # Initialize the Flask app
 app = Flask(__name__)
 
-
-# Initialize extensions
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)

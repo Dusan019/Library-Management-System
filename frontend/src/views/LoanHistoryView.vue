@@ -27,7 +27,7 @@
             <td>{{ loan.date_returned || 'Not Returned' }}</td> <!-- Display Date Returned -->
             <td>
               <button @click="editLoan(loan)">✏️</button>
-              <button @click="deleteLoan(loan.id)">🗑️</button>
+              <button @click="confirmDelete(loan.id)">🗑️</button>
             </td>
           </tr>
         </tbody>
@@ -45,16 +45,16 @@
           <h2>Add New Loan</h2>
           <form @submit.prevent="addLoan">
             <label for="book_id">Book:</label>
-<select v-model="newLoan.book_id" id="book_id" @change="updateBookTitle">
-  <option disabled value="">Select a Book</option>
-  <option v-for="book in books" :key="book.id" :value="book.id">{{ book.title }}</option>
-</select>
+            <select v-model="newLoan.book_id" id="book_id" @change="updateBookTitle">
+            <option disabled value="">Select a Book</option>
+            <option v-for="book in books" :key="book.id" :value="book.id">{{ book.title }}</option>
+            </select>
 
             <label for="user_id">User:</label>
-<select v-model="newLoan.user_id" id="user_id" required>
-  <option disabled value="">Select a User</option>
-  <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}</option>
-</select>
+            <select v-model="newLoan.user_id" id="user_id" required>
+            <option disabled value="">Select a User</option>
+            <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}</option>
+            </select>
             <label for="loan_date">Loan Date:</label>
             <input type="date" v-model="newLoan.loan_date" required />
   
@@ -75,6 +75,7 @@
         <div class="modal-content">
           <h2>Edit Loan</h2>
           <form @submit.prevent="updateLoan">
+            <div class="select">
             <label for="book_title">Book Title:</label>
             <select v-model="editForm.book_id" required>
               <option v-for="book in books" :key="book.id" :value="book.id">{{ book.title }}</option>
@@ -84,7 +85,7 @@
             <select v-model="editForm.user_id" required>
               <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}</option>
             </select>
-  
+          </div>
             <label for="loan_date">Loan Date:</label>
             <input type="date" v-model="editForm.loan_date" required />
   
@@ -99,7 +100,25 @@
           </form>
         </div>
       </div>
-  
+      <div v-if="showConfirmDeleteModal" class="modal">
+      <div class="modal-content">
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this loan?</p>
+        <div class="modal-footer">
+        <button @click="deleteLoan(loanToDelete)">Yes, Delete</button>
+        <button @click="closeConfirmDeleteModal">Cancel</button>
+      </div>
+      </div>
+    </div>
+    <div v-if="showConfirmDeleteModal" class="modal">
+      <div class="modal-content">
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this loan?</p>
+        <button @click="deleteLoan(loanToDelete)" class="yes-btn">Yes, Delete</button>
+        <button @click="closeConfirmDeleteModal" class="no-btn">Cancel</button>
+      </div>
+    </div>
+      
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
     </div>
   </template>
@@ -107,6 +126,9 @@
   <script>
   import axios from 'axios';
   import Button from '@/components/Button.vue';
+  import Toastify from 'toastify-js';
+  import 'toastify-js/src/toastify.css'; 
+
   export default {
     components: {
     Button, // Register the Button component
@@ -118,6 +140,8 @@
         users: [],
         showAddModal: false,
         showEditModal: false,
+        showConfirmDeleteModal: false, // New state for confirmation modal
+      loanToDelete: null, 
         newLoan: {
           book_id: '',
           user_id: '',
@@ -147,6 +171,14 @@
       }
     },
     methods: {
+      confirmDelete(loanId) {
+      this.loanToDelete = loanId;
+      this.showConfirmDeleteModal = true;
+    },
+    closeConfirmDeleteModal() {
+      this.showConfirmDeleteModal = false;
+      this.loanToDelete = null;
+    },
       updateBookTitle() {
     const selectedBook = this.books.find(book => book.id === this.newLoan.book_id);
     this.newLoan.title = selectedBook ? selectedBook.title : '';
@@ -154,10 +186,8 @@
       async addLoan() {
     try {
       console.log(this.newLoan); 
-      // Validate the data
       if (!this.newLoan.book_id || !this.newLoan.user_id || !this.newLoan.loan_date || !this.newLoan.return_date) {
-        
-        alert("All fields are required except 'Date Returned'.");
+        this.showToast("error","All fields are required except 'Date Returned'.");
         return;
       }
 
@@ -171,7 +201,7 @@
           title: this.books.find(book => book.id === this.newLoan.book_id)?.title || '',
         });
 
-        this.successMessage = 'Loan added successfully!';
+        this.showToast("success","Loan added successfully!");
         this.closeAddModal();
 
         // Reset the newLoan form
@@ -252,7 +282,7 @@
       loan_date: this.editForm.loan_date,
       return_date: this.editForm.return_date,
       date_returned: this.editForm.date_returned || null,
-      title: this.editForm.title // Null if empty
+      title: this.editForm.title 
     };
 
     const response = await axios.put(`http://127.0.0.1:5000/loans/${this.editForm.id}`, updatedLoan);
@@ -267,7 +297,7 @@
         };
       }
 
-      this.successMessage = 'Loan updated successfully!';
+      this.showToast("success",'Loan updated successfully!');
       this.closeEditModal();
       setTimeout(() => (this.successMessage = ''), 3000);
     }
@@ -285,6 +315,16 @@ async updateBookAvailability(bookId) {
     console.error('Error updating book availability:', error);
   }
 },
+showToast(type, message) {
+      Toastify({
+        text: message,
+        duration: 3000,  // Duration in ms (3 seconds)
+        close: true,  // Show close button
+        gravity: "top",  // Position at the top
+        position: "center",  // Centered on the screen
+        backgroundColor: type === 'success' ? "#4CAF50" : "#ff4d4d",  // Green for success, red for error
+      }).showToast();
+    },  
 
   
       async deleteLoan(loanId) {
@@ -294,8 +334,8 @@ async updateBookAvailability(bookId) {
   
           if (response.data.message === 'Loan deleted successfully') {
             this.loans = this.loans.filter(loan => loan.id !== loanId);
-            this.successMessage = 'Loan deleted successfully!';
-  
+            this.showToast("success","Loan deleted successfully!");
+            this.closeConfirmDeleteModal();
             setTimeout(() => {
               this.successMessage = '';
             }, 3000);
@@ -320,7 +360,11 @@ async updateBookAvailability(bookId) {
   };
   </script>
   <style scoped>
-  /* Styles go here */
+  .select{
+    display:flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+  }
   .loan-history {
     margin: 0px;
   max-width: 100%;
@@ -364,8 +408,9 @@ async updateBookAvailability(bookId) {
   border-collapse: separate;
   border-spacing: 10px 10px;
   text-align: center;
-  background-color:rgba(167, 199, 231, 0.7);
-  border-radius: 10px; /* Add gap between rows */
+  background-color: rgba(87, 59, 138, 0.8);
+  border-radius: 10px; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 
 }
 
@@ -379,7 +424,7 @@ border-bottom: 1px solid #ddd;
 }
 
 th {
-background-color: #28a745;
+background-color: #007bff;
 color: white;
 font-weight: bold;
 text-transform: uppercase;
@@ -390,6 +435,7 @@ background-color: #f9f9f9;
 color: #333;
 }
   .modal {
+    text-align: center;
     position: fixed;
     top: 0;
     left: 0;
@@ -400,6 +446,27 @@ color: #333;
     justify-content: center;
     align-items: center;
   }
+  .modal-content .yes-btn {
+  background-color: #28a745; 
+}
+
+.modal-content .yes-btn:hover {
+  background-color: #218838; 
+}
+
+.modal-content .no-btn {
+  background-color: #dc3545; 
+}
+
+.modal-content .no-btn:hover {
+  background-color: #c82333; 
+}
+
+.modal-content button {
+  width: auto; 
+  padding: 10px 20px; 
+  cursor: pointer;
+}
   
   .modal-content {
     background-color: white;
